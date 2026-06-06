@@ -1,0 +1,79 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    title: "Script Reloader - Docker over SSH";
+    preferred-width: 960px;
+    preferred-height: 560px;
+    min-width: 640px;
+    min-height: 400px;
+
+    callback connect-clicked();
+    callback refresh-clicked();
+    callback stop-clicked();
+    callback start-clicked();
+    callback restart-clicked();
+    callback exec-clicked();
+
+    in-out property <string> status-text: "Disconnected. (bootstrap)";
+
+    VerticalBox {
+        padding: 12px;
+        spacing: 8px;
+
+        // Connection area
+        HorizontalBox {
+            spacing: 8px;
+            Text { text: "Host:"; vertical-alignment: center; min-width: 40px; }
+            LineEdit { placeholder-text: "host"; enabled: false; min-width: 120px; horizontal-stretch: 1; }
+            Text { text: "Port:"; vertical-alignment: center; min-width: 32px; }
+            LineEdit { placeholder-text: "22"; enabled: false; min-width: 48px; }
+            Text { text: "User:"; vertical-alignment: center; min-width: 36px; }
+            LineEdit { placeholder-text: "username"; enabled: false; min-width: 100px; horizontal-stretch: 1; }
+            Button {
+                text: "Connect";
+                enabled: false;
+                clicked => { root.connect-clicked(); }
+            }
+        }
+
+        // Table placeholder
+        Rectangle {
+            background: #f0f0f0;
+            border-width: 1px;
+            border-color: #cccccc;
+            vertical-stretch: 1;
+            min-height: 200px;
+
+            Text {
+                text: "Container table (not implemented)";
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                color: #888888;
+            }
+        }
+
+        // Button row (disabled stubs)
+        HorizontalBox {
+            spacing: 8px;
+            Button { text: "Refresh"; enabled: false; clicked => { root.refresh-clicked(); } }
+            Button { text: "Stop"; enabled: false; clicked => { root.stop-clicked(); } }
+            Button { text: "Start"; enabled: false; clicked => { root.start-clicked(); } }
+            Button { text: "Restart"; enabled: false; clicked => { root.restart-clicked(); } }
+            Button { text: "Exec"; enabled: false; clicked => { root.exec-clicked(); } }
+        }
+
+        // Status
+        Text {
+            text: root.status-text;
+            color: #666666;
+        }
+
+        // Footer
+        Text {
+            text: "Authored by Kevyn Watkins";
+            font-size: 11px;
+            color: #999999;
+            horizontal-alignment: center;
+        }
+    }
+}
