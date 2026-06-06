@@ -11,6 +11,6 @@ Follow [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`.
 
 ## Artifacts
 
-Release binary: `target/release/script-reloader.exe` (strip + LTO enabled).
+Release binary: `target\x86_64-pc-windows-msvc\release\script-reloader.exe` (strip + LTO enabled).
 
 Publishing release artifacts to GitHub Releases is not automated yet.

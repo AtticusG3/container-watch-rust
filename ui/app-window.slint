@@ -1,4 +1,89 @@
-import { Button, VerticalBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+import {
+    VerticalBox,
+    HorizontalBox,
+    ListView,
+    ScrollView,
+    StandardButton,
+} from "std-widgets.slint";
+import { BorderedLineEdit, ActionButton, LabeledCheckBox, ContainerTableRow } from "widgets.slint";
+
+export struct ContainerRow {
+    name: string,
+    state: string,
+    status: string,
+    image: string,
+    id: string,
+    selected: bool,
+    restart-target: string,
+}
+
+export component MessageDialog inherits Window {
+    in property <string> dialog-title: "Message";
+    in property <string> dialog-message: "";
+    callback closed();
+
+    title: root.dialog-title;
+    always-on-top: true;
+    preferred-width: 420px;
+    background: #ffffff;
+
+    VerticalBox {
+        padding: 16px;
+        spacing: 12px;
+
+        Text {
+            text: root.dialog-message;
+            wrap: word-wrap;
+            color: #1a1a1a;
+            font-size: 13px;
+        }
+
+        HorizontalBox {
+            alignment: end;
+            StandardButton {
+                kind: ok;
+                clicked => { root.closed(); }
+            }
+        }
+    }
+}
+
+export component ConfirmDialog inherits Window {
+    in property <string> dialog-title: "Confirm";
+    in property <string> dialog-message: "";
+    callback confirmed();
+    callback cancelled();
+
+    title: root.dialog-title;
+    always-on-top: true;
+    preferred-width: 480px;
+    background: #ffffff;
+
+    VerticalBox {
+        padding: 16px;
+        spacing: 12px;
+
+        Text {
+            text: root.dialog-message;
+            wrap: word-wrap;
+            color: #1a1a1a;
+            font-size: 13px;
+        }
+
+        HorizontalBox {
+            spacing: 8px;
+            alignment: end;
+            StandardButton {
+                kind: cancel;
+                clicked => { root.cancelled(); }
+            }
+            StandardButton {
+                kind: ok;
+                clicked => { root.confirmed(); }
+            }
+        }
+    }
+}
 
 export component AppWindow inherits Window {
     title: "Script Reloader - Docker over SSH";
@@ -6,73 +91,233 @@ export component AppWindow inherits Window {
     preferred-height: 560px;
     min-width: 640px;
     min-height: 400px;
+    background: #f0f0f0;
 
     callback connect-clicked();
+    callback disconnect-clicked();
     callback refresh-clicked();
+    callback restart-all-clicked();
     callback stop-clicked();
     callback start-clicked();
     callback restart-clicked();
     callback exec-clicked();
+    callback remember-changed(bool);
+    callback container-row-clicked(int, bool, bool);
 
-    in-out property <string> status-text: "Disconnected. (bootstrap)";
+    in-out property <string> status-text: "Disconnected.";
+    in-out property <string> host-text: "";
+    in-out property <string> port-text: "22";
+    in-out property <string> user-text: "";
+    in-out property <string> password-text: "";
+    in-out property <bool> remember-connection: false;
+    in-out property <bool> busy: false;
+    in-out property <bool> connected: false;
+
+    in-out property <bool> connect-enabled: true;
+    in-out property <bool> disconnect-enabled: false;
+    in-out property <bool> refresh-enabled: false;
+    in-out property <bool> restart-all-enabled: false;
+    in-out property <bool> stop-enabled: false;
+    in-out property <bool> start-enabled: false;
+    in-out property <bool> restart-enabled: false;
+    in-out property <bool> exec-enabled: false;
+    in-out property <bool> fields-enabled: true;
+
+    in-out property <[ContainerRow]> containers: [];
 
     VerticalBox {
-        padding: 12px;
-        spacing: 8px;
+        padding: 8px;
+        spacing: 6px;
 
-        // Connection area
-        HorizontalBox {
-            spacing: 8px;
-            Text { text: "Host:"; vertical-alignment: center; min-width: 40px; }
-            LineEdit { placeholder-text: "host"; enabled: false; min-width: 120px; horizontal-stretch: 1; }
-            Text { text: "Port:"; vertical-alignment: center; min-width: 32px; }
-            LineEdit { placeholder-text: "22"; enabled: false; min-width: 48px; }
-            Text { text: "User:"; vertical-alignment: center; min-width: 36px; }
-            LineEdit { placeholder-text: "username"; enabled: false; min-width: 100px; horizontal-stretch: 1; }
-            Button {
-                text: "Connect";
-                enabled: false;
-                clicked => { root.connect-clicked(); }
-            }
-        }
-
-        // Table placeholder
         Rectangle {
-            background: #f0f0f0;
             border-width: 1px;
-            border-color: #cccccc;
-            vertical-stretch: 1;
-            min-height: 200px;
+            border-color: #b0b0b0;
+            background: #f5f5f5;
+            border-radius: 4px;
 
-            Text {
-                text: "Container table (not implemented)";
-                horizontal-alignment: center;
-                vertical-alignment: center;
-                color: #888888;
+            VerticalBox {
+                padding: 6px;
+                spacing: 4px;
+
+                HorizontalBox {
+                    spacing: 6px;
+                    Text { text: "Host:"; vertical-alignment: center; min-width: 34px; color: #1a1a1a; font-size: 12px; }
+                    BorderedLineEdit {
+                        text <=> root.host-text;
+                        enabled: root.fields-enabled;
+                        horizontal-stretch: 1;
+                    }
+                    Text { text: "Port:"; vertical-alignment: center; min-width: 28px; color: #1a1a1a; font-size: 12px; }
+                    BorderedLineEdit {
+                        text <=> root.port-text;
+                        enabled: root.fields-enabled;
+                        min-width: 48px;
+                        input-type: number;
+                    }
+                    Text { text: "User:"; vertical-alignment: center; min-width: 30px; color: #1a1a1a; font-size: 12px; }
+                    BorderedLineEdit {
+                        text <=> root.user-text;
+                        enabled: root.fields-enabled;
+                        min-width: 80px;
+                        horizontal-stretch: 1;
+                    }
+                }
+
+                HorizontalBox {
+                    spacing: 6px;
+                    Text { text: "Password:"; vertical-alignment: center; min-width: 58px; color: #1a1a1a; font-size: 12px; }
+                    BorderedLineEdit {
+                        text <=> root.password-text;
+                        enabled: root.fields-enabled;
+                        input-type: password;
+                        horizontal-stretch: 1;
+                    }
+                    LabeledCheckBox {
+                        label: "Remember";
+                        checked <=> root.remember-connection;
+                        enabled: root.fields-enabled;
+                        toggled(checked) => { root.remember-changed(checked); }
+                    }
+                    ActionButton {
+                        label: "Connect";
+                        enabled: root.connect-enabled;
+                        min-width: 72px;
+                        clicked => { root.connect-clicked(); }
+                    }
+                    ActionButton {
+                        label: "Disconnect";
+                        enabled: root.disconnect-enabled;
+                        min-width: 80px;
+                        clicked => { root.disconnect-clicked(); }
+                    }
+                }
             }
         }
 
-        // Button row (disabled stubs)
-        HorizontalBox {
-            spacing: 8px;
-            Button { text: "Refresh"; enabled: false; clicked => { root.refresh-clicked(); } }
-            Button { text: "Stop"; enabled: false; clicked => { root.stop-clicked(); } }
-            Button { text: "Start"; enabled: false; clicked => { root.start-clicked(); } }
-            Button { text: "Restart"; enabled: false; clicked => { root.restart-clicked(); } }
-            Button { text: "Exec"; enabled: false; clicked => { root.exec-clicked(); } }
+        VerticalBox {
+            spacing: 0;
+            vertical-stretch: 1;
+
+            table-panel := Rectangle {
+                vertical-stretch: 1;
+                border-width: 1px;
+                border-color: #b0b0b0;
+                border-radius: 4px;
+                clip: true;
+
+                VerticalBox {
+                    spacing: 0;
+
+                    Rectangle {
+                        background: #e4e4e4;
+
+                        ContainerTableRow {
+                            is-header: true;
+                            name-text: "Name";
+                            state-text: "State";
+                            status-text: "Status";
+                            image-text: "Image";
+                            id-text: "ID";
+                        }
+                    }
+
+                    if root.containers.length == 0: Rectangle {
+                        vertical-stretch: 1;
+                        background: #ffffff;
+
+                        Text {
+                            text: "No containers. Connect and refresh.";
+                            color: #666666;
+                            font-size: 12px;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    ScrollView {
+                        visible: root.containers.length > 0;
+                        vertical-stretch: 1;
+
+                        ListView {
+                            for row[i] in root.containers: Rectangle {
+                                height: 24px;
+                                background: row.selected ? #cce4ff : (mod(i, 2) == 0 ? #ffffff : #f5f5f5);
+
+                                ContainerTableRow {
+                                    name-text: row.name;
+                                    state-text: row.state;
+                                    status-text: row.status;
+                                    image-text: row.image;
+                                    id-text: row.id;
+                                }
+
+                                TouchArea {
+                                    pointer-event(event) => {
+                                        if (event.button == PointerEventButton.left && event.kind == PointerEventKind.up) {
+                                            root.container-row-clicked(i, event.modifiers.control, event.modifiers.shift);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        // Status
+        // Action buttons
+        HorizontalBox {
+            spacing: 8px;
+            alignment: start;
+            ActionButton {
+                label: "Refresh";
+                enabled: root.refresh-enabled;
+                min-width: 80px;
+                clicked => { root.refresh-clicked(); }
+            }
+            ActionButton {
+                label: "Exec";
+                enabled: root.exec-enabled;
+                min-width: 64px;
+                clicked => { root.exec-clicked(); }
+            }
+            ActionButton {
+                label: "Restart all running";
+                enabled: root.restart-all-enabled;
+                min-width: 140px;
+                clicked => { root.restart-all-clicked(); }
+            }
+            ActionButton {
+                label: "Stop";
+                enabled: root.stop-enabled;
+                min-width: 64px;
+                clicked => { root.stop-clicked(); }
+            }
+            ActionButton {
+                label: "Start";
+                enabled: root.start-enabled;
+                min-width: 64px;
+                clicked => { root.start-clicked(); }
+            }
+            ActionButton {
+                label: "Restart";
+                enabled: root.restart-enabled;
+                min-width: 72px;
+                clicked => { root.restart-clicked(); }
+            }
+        }
+
+        // Status bar
         Text {
             text: root.status-text;
-            color: #666666;
+            color: #333333;
+            font-size: 13px;
         }
 
-        // Footer
         Text {
             text: "Authored by Kevyn Watkins";
             font-size: 11px;
-            color: #999999;
+            color: #777777;
             horizontal-alignment: center;
         }
     }

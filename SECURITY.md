@@ -7,7 +7,7 @@ Report security issues privately to the repository maintainer (do not open publi
 ## Known risks (planned features)
 
 - **SSH passwords:** storing or transmitting credentials incorrectly could expose remote hosts.
-- **DPAPI session files:** `%LocalAppData%\ScriptReloader\session.json` will hold encrypted session data; treat the directory as sensitive on shared machines.
+- **DPAPI session files:** `%LocalAppData%\ContainerWatch\session.json` holds encrypted session data; treat the directory as sensitive on shared machines. This path is separate from the .NET Script Reloader app.
 
 ## Policy
 

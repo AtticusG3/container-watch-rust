@@ -3,12 +3,11 @@ mod exec;
 mod models;
 mod session;
 mod ssh_docker;
+mod ssh_util;
 mod ui;
 
-slint::include_modules!();
-
 fn main() -> Result<(), slint::PlatformError> {
-    let app = AppWindow::new()?;
-    app.set_status_text("Disconnected. (bootstrap)".into());
-    app.run()
+    // Force light native widgets (LineEdit, Button, CheckBox) on dark Windows theme.
+    std::env::set_var("SLINT_STYLE", "fluent-light");
+    ui::run_app()
 }

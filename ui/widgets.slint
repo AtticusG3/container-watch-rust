@@ -1,0 +1,154 @@
+import { HorizontalBox } from "std-widgets.slint";
+
+// Table cell with fixed width. Clip + elide keeps columns aligned.
+component TableCell inherits Rectangle {
+    in property <string> text;
+    in property <bool> header: false;
+    in property <length> cell-width;
+
+    width: cell-width;
+    clip: true;
+
+    Text {
+        width: 100%;
+        text: root.text;
+        overflow: elide;
+        color: #1a1a1a;
+        font-size: 12px;
+        font-weight: root.header ? 600 : 400;
+        vertical-alignment: center;
+    }
+}
+
+// Shared header + row layout (fixed column widths).
+export component ContainerTableRow inherits HorizontalBox {
+    in property <string> name-text;
+    in property <string> state-text;
+    in property <string> status-text;
+    in property <string> image-text;
+    in property <string> id-text;
+    in property <bool> is-header: false;
+
+    padding-left: 4px;
+    padding-right: is-header ? 14px : 4px;
+    spacing: 4px;
+    horizontal-stretch: 1;
+
+    TableCell { cell-width: 200px; text: name-text; header: is-header; }
+    TableCell { cell-width: 72px; text: state-text; header: is-header; }
+    TableCell { cell-width: 180px; text: status-text; header: is-header; }
+    TableCell { cell-width: 240px; text: image-text; header: is-header; }
+    TableCell { cell-width: 100px; text: id-text; header: is-header; }
+}
+
+// Plain TextInput: always dark text on white (no fluent dark-theme bleed-through).
+export component BorderedLineEdit inherits Rectangle {
+    in-out property <string> text;
+    in property <bool> enabled: true;
+    in property <InputType> input-type: InputType.text;
+
+    min-height: 24px;
+    border-width: 1px;
+    border-color: input.has-focus ? #0078d4 : #707070;
+    background: root.enabled ? #ffffff : #ececec;
+    border-radius: 3px;
+    clip: true;
+    forward-focus: input;
+
+    input := TextInput {
+        x: 6px;
+        width: parent.width - 12px;
+        height: parent.height;
+        vertical-alignment: center;
+        single-line: true;
+        text <=> root.text;
+        enabled: root.enabled;
+        input-type: root.input-type;
+        color: root.enabled ? #1a1a1a : #666666;
+        font-size: 13px;
+        selection-background-color: #cce4ff;
+        selection-foreground-color: #1a1a1a;
+    }
+}
+
+export component ActionButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    min-height: 24px;
+    min-width: 72px;
+    border-width: 1px;
+    border-color: root.enabled ? #606060 : #b0b0b0;
+    background: ta.pressed ? #d0d0d0 : (root.enabled ? #eeeeee : #f4f4f4);
+    border-radius: 3px;
+
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+
+    Text {
+        text: root.label;
+        color: root.enabled ? #1a1a1a : #888888;
+        font-size: 13px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+export component PlainCheckBox inherits Rectangle {
+    in-out property <bool> checked;
+    in property <bool> enabled: true;
+    callback toggled(bool);
+
+    width: 16px;
+    height: 16px;
+    border-width: 1px;
+    border-color: root.enabled ? #606060 : #b0b0b0;
+    background: root.enabled ? #ffffff : #ececec;
+    border-radius: 2px;
+
+    if root.checked: Text {
+        text: "X";
+        color: #1a1a1a;
+        font-size: 11px;
+        font-weight: 700;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+}
+
+export component LabeledCheckBox inherits Rectangle {
+    in-out property <bool> checked;
+    in property <string> label;
+    in property <bool> enabled: true;
+    callback toggled(bool);
+
+    min-height: 20px;
+
+    HorizontalBox {
+        spacing: 6px;
+
+        PlainCheckBox {
+            checked <=> root.checked;
+            enabled: root.enabled;
+            toggled(checked) => { root.toggled(checked); }
+        }
+
+        Text {
+            text: root.label;
+            color: root.enabled ? #1a1a1a : #888888;
+            font-size: 12px;
+            vertical-alignment: center;
+        }
+    }
+}

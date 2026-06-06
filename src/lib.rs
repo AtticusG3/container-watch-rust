@@ -5,4 +5,5 @@ pub mod exec;
 pub mod models;
 pub mod session;
 pub mod ssh_docker;
+pub mod ssh_util;
 pub mod ui;

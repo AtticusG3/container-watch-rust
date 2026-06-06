@@ -5,7 +5,7 @@
 On Windows:
 
 ```powershell
-cargo build --release
+cargo build --release --target x86_64-pc-windows-msvc
 ```
 
 Target: `x86_64-pc-windows-msvc`. Release profile is tuned for a small portable exe.
@@ -18,6 +18,17 @@ Target: `x86_64-pc-windows-msvc`. Release profile is tuned for a small portable 
 - **Strings:** ASCII-only in UI and operator-facing logs.
 - **Secrets:** never commit passwords, keys, or DPAPI session data.
 
-## Out of scope until feature prompts
+## Architecture
 
-SSH, Docker commands, DPAPI session persistence, container table binding, exec popout terminal.
+| Module | Role |
+|--------|------|
+| `config/` | Embedded + sidecar + env settings |
+| `session/` | DPAPI session file (`%LocalAppData%\ContainerWatch\`, not .NET path) |
+| `ssh_docker/` | Remote docker commands via system `ssh.exe` |
+| `ssh_util/` | SSH_ASKPASS helper + non-interactive ssh runner |
+| `exec/` | Popout terminal launcher |
+| `ui/` | Slint wiring, worker threads, dialogs |
+
+## Out of scope
+
+SSH key auth UI, Linux/macOS GUI, local Docker, embedded terminal emulator, installer/auto-update.
